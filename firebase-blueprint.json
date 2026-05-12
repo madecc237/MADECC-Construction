@@ -10,6 +10,19 @@
         "status": { "type": "string", "enum": ["Planning", "In Progress", "Completed", "On Hold"] },
         "budget": { "type": "number" },
         "deadline": { "type": "string", "format": "date-time" },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "dueDate": { "type": "string", "format": "date-time" },
+              "completed": { "type": "boolean" }
+            },
+            "required": ["id", "title", "dueDate", "completed"]
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "client", "status", "budget"]
