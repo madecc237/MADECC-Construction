@@ -1,15 +1,20 @@
 import { Handler } from "@netlify/functions";
 
 export const handler: Handler = async (event) => {
+  const env = process.env;
+  const def_pref = "MADECC";
+  const def_year = "2026";
+  const def = (role: string) => `${role}_${def_pref}_${def_year}`;
+
   // GET: Fetch keys
   if (event.httpMethod === "GET") {
     const keys = {
-      'CEO': process.env.CEO_ACCESS_KEY || ('CEO' + '_MADECC' + '_2026'),
-      'PROJECT_MANAGER': process.env.PM_ACCESS_KEY || ('PM' + '_MADECC' + '_2026'),
-      'CONTENT_EDITOR': process.env.CE_ACCESS_KEY || ('CE' + '_MADECC' + '_2026'),
-      'FINANCIAL_OFFICER': process.env.FO_ACCESS_KEY || ('FO' + '_MADECC' + '_2026'),
-      'ACCOUNTANT': process.env.ACC_ACCESS_KEY || ('ACC' + '_MADECC' + '_2026'),
-      'SECRETARY': process.env.SEC_ACCESS_KEY || ('SEC' + '_MADECC' + '_2026')
+      'CEO': env.CEO_ACCESS_KEY || def('CEO'),
+      'PROJECT_MANAGER': env.PM_ACCESS_KEY || def('PM'),
+      'CONTENT_EDITOR': env.CE_ACCESS_KEY || def('CE'),
+      'FINANCIAL_OFFICER': env.FO_ACCESS_KEY || def('FO'),
+      'ACCOUNTANT': env.ACC_ACCESS_KEY || def('ACC'),
+      'SECRETARY': env.SEC_ACCESS_KEY || def('SEC')
     };
     return {
       statusCode: 200,
