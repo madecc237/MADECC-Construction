@@ -207,6 +207,8 @@ export default function AdminProjects() {
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
+  const [isSeeding, setIsSeeding] = useState(false);
+
   // Firestore sync
   React.useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
@@ -216,9 +218,7 @@ export default function AdminProjects() {
         ...doc.data()
       })) as Project[];
       
-      // If empty, we can seed with mock data if needed, or just let it be empty
-      // For this build, let's auto-seed if empty to maintain the visual state
-      if (projectsData.length === 0 && loading) {
+      if (projectsData.length === 0 && loading && !isSeeding) {
         seedMockData();
       } else {
         setProjects(projectsData);
@@ -229,15 +229,23 @@ export default function AdminProjects() {
     });
 
     return () => unsubscribe();
-  }, [loading]);
+  }, [loading, isSeeding]);
 
   const seedMockData = async () => {
-    for (const p of mockProjects) {
-      const { id, ...data } = p;
-      await addDoc(collection(db, 'projects'), {
-        ...data,
-        createdAt: serverTimestamp()
-      });
+    if (isSeeding) return;
+    setIsSeeding(true);
+    try {
+      for (const p of mockProjects) {
+        const { id, ...data } = p;
+        await addDoc(collection(db, 'projects'), {
+          ...data,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error("Seeding failed", error);
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -273,6 +281,12 @@ export default function AdminProjects() {
 
   const isOverdue = (deadline: string) => {
     return new Date(deadline) < new Date();
+  };
+
+  const calculateProgress = (milestones: Milestone[]) => {
+    if (!milestones || milestones.length === 0) return 0;
+    const completed = milestones.filter(m => m.completed).length;
+    return Math.round((completed / milestones.length) * 100);
   };
 
   const handleApproveRequest = (id: string, name: string) => {
@@ -330,10 +344,11 @@ export default function AdminProjects() {
     const updatedMilestones = [...(selectedProject.milestones || []), milestone];
     
     try {
+      const progress = calculateProgress(updatedMilestones);
+
       await updateDoc(doc(db, 'projects', selectedProjectId), {
         milestones: updatedMilestones,
-        // Optional: auto-calculate progress based on milestones
-        progress: Math.round((updatedMilestones.filter(m => m.completed).length / updatedMilestones.length) * 100)
+        progress
       });
       
       setIsMilestoneModalOpen(false);
@@ -353,7 +368,7 @@ export default function AdminProjects() {
     try {
       await updateDoc(doc(db, 'projects', selectedProjectId), {
         milestones: updatedMilestones,
-        progress: Math.round((updatedMilestones.filter(m => m.completed).length / updatedMilestones.length) * 100)
+        progress: calculateProgress(updatedMilestones)
       });
       setEditingMilestone(null);
       setIsMilestoneModalOpen(false);
@@ -364,16 +379,13 @@ export default function AdminProjects() {
 
   const handleDeleteMilestone = async (milestoneId: string) => {
     if (!selectedProjectId || !selectedProject) return;
-    if (!confirm("Are you sure you want to decommission this milestone artifact?")) return;
 
     const updatedMilestones = selectedProject.milestones?.filter(m => m.id !== milestoneId) || [];
 
     try {
       await updateDoc(doc(db, 'projects', selectedProjectId), {
         milestones: updatedMilestones,
-        progress: updatedMilestones.length > 0 
-          ? Math.round((updatedMilestones.filter(m => m.completed).length / updatedMilestones.length) * 100)
-          : 0
+        progress: calculateProgress(updatedMilestones)
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `projects/${selectedProjectId}`);
@@ -390,10 +402,19 @@ export default function AdminProjects() {
     try {
       await updateDoc(doc(db, 'projects', selectedProjectId), {
         milestones: updatedMilestones,
-        progress: Math.round((updatedMilestones.filter(m => m.completed).length / updatedMilestones.length) * 100)
+        progress: calculateProgress(updatedMilestones)
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `projects/${selectedProjectId}`);
+    }
+  };
+
+  const handleMilestoneFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingMilestone) {
+      handleUpdateMilestone(editingMilestone);
+    } else {
+      handleAddMilestone(e);
     }
   };
 
@@ -788,7 +809,7 @@ export default function AdminProjects() {
                           View Contract <ExternalLink size={10} />
                         </Link>
                       ) : (
-                        <span className="text-[11px] font-black text-gray-700 uppercase">Unlinked</span>
+                        <span className="text-[11px] font-black text-gray-500 uppercase italic transition-all">Unlinked</span>
                       )}
                     </div>
                   </div>
@@ -1185,7 +1206,7 @@ export default function AdminProjects() {
                 </button>
               </div>
 
-              <form className="space-y-6" onSubmit={editingMilestone ? (e) => { e.preventDefault(); handleUpdateMilestone({}); } : handleAddMilestone}>
+              <form className="space-y-6" onSubmit={handleMilestoneFormSubmit}>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-1">Milestone Title</label>
@@ -1239,11 +1260,7 @@ export default function AdminProjects() {
                     Cancel
                   </button>
                   <button 
-                    type="button"
-                    onClick={() => {
-                      if (editingMilestone) handleUpdateMilestone(editingMilestone);
-                      else handleAddMilestone({ preventDefault: () => {} } as any);
-                    }}
+                    type="submit"
                     className="flex-[2] py-4 bg-orange-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-orange-500 transition-all shadow-xl shadow-orange-600/20 active:scale-[0.98]"
                   >
                     {editingMilestone ? 'Deploy Updates' : 'Confirm Milestone'}

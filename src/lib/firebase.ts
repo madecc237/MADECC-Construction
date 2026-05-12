@@ -57,10 +57,16 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 // Connectivity check
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration or network connection.");
+    // Try to get a non-existent document to test auth/connectivity
+    await getDocFromServer(doc(db, 'system', 'connection_test'));
+    console.log("[FIREBASE] Connection verified.");
+  } catch (error: any) {
+    if (error.code === 'unavailable' || (error.message && error.message.includes('offline'))) {
+      console.warn("FIREBASE OFFLINE: The system is running in offline mode. Some features may be limited.");
+    } else if (error.code === 'permission-denied') {
+       console.log("[FIREBASE] Connection established (Permission Denied for test doc is expected).");
+    } else {
+      console.error("[FIREBASE] Configuration Error:", error.message);
     }
   }
 }

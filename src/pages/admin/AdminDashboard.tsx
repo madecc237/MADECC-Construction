@@ -268,9 +268,9 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="h-[400px] w-full min-w-0 relative">
+            <div className="h-[400px] w-full min-w-0 min-h-[400px] relative">
               {isMounted && (
-                <ResponsiveContainer width="99.9%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={400}>
                   {renderChart()}
                 </ResponsiveContainer>
               )}

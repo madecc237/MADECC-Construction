@@ -22,13 +22,14 @@ service cloud.firestore {
 
     // Projects collection
     match /projects/{projectId} {
-      // For now, allow all authenticated users to read/write for the demo
-      // In a real app, we'd check roles (which we can do via a users collection or custom claims)
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
-      
-      // Validation could be added here (Phase 4 of skill)
+      allow read, write: if isSignedIn();
     }
+    
+    match /contracts/{id} { allow read, write: if isSignedIn(); }
+    match /payments/{id} { allow read, write: if isSignedIn(); }
+    match /employees/{id} { allow read, write: if isSignedIn(); }
+    match /invoices/{id} { allow read, write: if isSignedIn(); }
+    match /system/{id} { allow read, write: if false; } // Locked by default
     
     // Support other collections as needed
     match /access_requests/{requestId} {

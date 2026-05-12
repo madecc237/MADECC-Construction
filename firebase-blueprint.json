@@ -91,6 +91,19 @@
         }
       },
       "required": ["projectId", "invoiceNumber", "amount", "status"]
+    },
+    "SecurityConfig": {
+      "title": "Security Configuration",
+      "description": "System access keys and security settings",
+      "type": "object",
+      "properties": {
+        "keys": { 
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "lastRotation": { "type": "string", "format": "date-time" }
+      },
+      "required": ["keys"]
     }
   },
   "firestore": {
@@ -98,6 +111,7 @@
     "/contracts": { "schema": "Contract", "description": "Collection of signed contracts" },
     "/payments": { "schema": "Payment", "description": "Collection of financial transactions" },
     "/employees": { "schema": "Employee", "description": "Collection of employee records" },
-    "/invoices": { "schema": "Invoice", "description": "Collection of invoices" }
+    "/invoices": { "schema": "Invoice", "description": "Collection of invoices" },
+    "/system/security": { "schema": "SecurityConfig", "description": "Global security settings" }
   }
 }
