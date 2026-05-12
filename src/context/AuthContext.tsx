@@ -182,9 +182,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const { role } = await response.json();
         
-        // Step 1: Handle MFA or Direct Login
+        // Success logic...
         if (role === 'CEO') {
-          // Fetch keys upon CEO login
+          // ... (rest of CEO logic)
           try {
             const keysRes = await fetch('/api/admin/keys');
             const serverKeys = await keysRes.json();
@@ -194,12 +194,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-          console.log(`[DEVELOPMENT] MFA Code Generated: ${generatedCode}`);
           setMfaCode(generatedCode);
           setTempRole(role);
-          setFailedAttempts(0); // Reset on successful primary key
+          setFailedAttempts(0);
           
-          // Dispatch MFA to CEO
           const adminEmail = 'madeccco5@gmail.com'; 
           await fetch('/api/send-mfa', {
             method: 'POST',
@@ -211,25 +209,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
           });
           
-          console.log(`[AUTH] MFA dispatched to ${adminEmail}`);
           return { success: true, mfaRequired: true };
         } else {
-          // Direct Login for other staff
           setIsAuthenticated(true);
           setUser({ role });
           setFailedAttempts(0);
-          
           localStorage.setItem('madecc_admin_session', 'active');
           localStorage.setItem('madecc_admin_role', role);
-
           return { success: true, mfaRequired: false };
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.error) {
+          return { success: false, error: errorData.error };
         }
       }
     } catch (e) {
       console.error("Login API failure", e);
     }
 
-    // Handle failure
+    // Handle failure (brute force etc)
     const newCount = failedAttempts + 1;
     setFailedAttempts(newCount);
 

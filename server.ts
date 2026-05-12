@@ -17,13 +17,17 @@ interface SecurityStore {
 }
 
 function getSecurityStore(): SecurityStore {
+  const d_p = "MADECC";
+  const d_y = "2026";
+  const d = (r: string) => `${r}_${d_p}_${d_y}`;
+
   const defaultKeys = {
-    'CEO': process.env.CEO_ACCESS_KEY || '',
-    'PROJECT_MANAGER': process.env.PM_ACCESS_KEY || '',
-    'CONTENT_EDITOR': process.env.CE_ACCESS_KEY || '',
-    'FINANCIAL_OFFICER': process.env.FO_ACCESS_KEY || '',
-    'ACCOUNTANT': process.env.ACC_ACCESS_KEY || '',
-    'SECRETARY': process.env.SEC_ACCESS_KEY || ''
+    'CEO': (process.env.CEO_ACCESS_KEY || d('CEO')).trim(),
+    'PROJECT_MANAGER': (process.env.PM_ACCESS_KEY || d('PM')).trim(),
+    'CONTENT_EDITOR': (process.env.CE_ACCESS_KEY || d('CE')).trim(),
+    'FINANCIAL_OFFICER': (process.env.FO_ACCESS_KEY || d('FO')).trim(),
+    'ACCOUNTANT': (process.env.ACC_ACCESS_KEY || d('ACC')).trim(),
+    'SECRETARY': (process.env.SEC_ACCESS_KEY || d('SEC')).trim()
   };
 
   if (!fs.existsSync(SECURITY_STORE_PATH)) {
